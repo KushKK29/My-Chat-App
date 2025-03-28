@@ -8,44 +8,40 @@ import authRoutes from "./routes/auth.route.js";
 import messageRoutes from "./routes/message.route.js";
 import { app, server } from "./lib/socket.js";
 
-dotenv.config();
+dotenv.config(); // Ensure env variables are loaded before using them
 
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 5000;
 const __dirname = path.resolve();
 
+// Middleware
+app.use(cookieParser()); // Cookie-parser should be before cors for proper handling of credentials
 app.use(express.json({ limit: "50mb", extended: true }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
-app.use(cookieParser());
+
+// CORS Configuration
 app.use(
   cors({
     origin: "https://my-chat-app-plum-psi.vercel.app",
     credentials: true,
+    optionsSuccessStatus: 200, // Ensures proper handling of preflight requests
   })
 );
 
-app.use((req, res, next) => {
-  res.header(
-    "Access-Control-Allow-Origin",
-    "https://my-chat-app-plum-psi.vercel.app"
-  );
-  res.header("Access-Control-Allow-Credentials", "true");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  next();
-});
-
+// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 
-// if (process.env.NODE_ENV === "production") {
-//   app.use(express.static(path.join(__dirname, "../frontend/dist")));
+// Serve frontend in production
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, "../frontend/dist")));
 
-//   app.get("*", (req, res) => {
-//     res.sendFile(path.join(__dirname, "../frontend", "dist", "index.html"));
-//   });
-// }
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
+  });
+}
 
+// Start Server
 server.listen(PORT, () => {
-  console.log("Server is running on PORT:" + PORT);
+  console.log(`Server is running on PORT: ${PORT}`);
   connectDB();
 });
