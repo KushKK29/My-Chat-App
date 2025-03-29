@@ -2,49 +2,19 @@ import express from "express";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+
 import path from "path";
-import axios from "axios";
+
 import { connectDB } from "./lib/db.js";
+
 import authRoutes from "./routes/auth.route.js";
 import messageRoutes from "./routes/message.route.js";
-import { Server } from "socket.io";
-import http from "http";
+import { app, server } from "./lib/socket.js";
 
 dotenv.config();
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT;
 const __dirname = path.resolve();
-
-const app = express();
-const server = http.createServer(app);
-
-const io = new Server(server, {
-  cors: {
-    origin: ["http://localhost:5173"],
-    credentials: true,
-  },
-});
-
-const userSocketMap = {}; // {userId: socketId}
-
-io.on("connection", (socket) => {
-  console.log("A user connected", socket.id);
-
-  const userId = socket.handshake.query.userId;
-  if (userId) userSocketMap[userId] = socket.id;
-
-  io.emit("getOnlineUsers", Object.keys(userSocketMap));
-
-  socket.on("disconnect", () => {
-    console.log("A user disconnected", socket.id);
-    delete userSocketMap[userId];
-    io.emit("getOnlineUsers", Object.keys(userSocketMap));
-  });
-});
-
-export function getReceiverSocketId(userId) {
-  return userSocketMap[userId];
-}
 
 app.use(express.json());
 app.use(cookieParser());
@@ -56,7 +26,6 @@ app.use(
   })
 );
 
-// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 
@@ -76,7 +45,7 @@ app.get("/health", (req, res) => {
 // Keep-Alive Mechanism (Pings server every 15 minutes)
 const KEEP_ALIVE_URL =
   process.env.NODE_ENV === "production"
-    ? "https://my-chat-app-1-11jz.onrender.com/health"
+    ? "https://my-chat-app-uhe2.onrender.com/health"
     : `http://localhost:${PORT}/health`;
 
 setInterval(async () => {
@@ -89,6 +58,6 @@ setInterval(async () => {
 }, 15 * 60 * 1000); // Runs every 15 minutes
 
 server.listen(PORT, () => {
-  console.log("Server is running on PORT:" + PORT);
+  console.log("server is running on PORT:" + PORT);
   connectDB();
 });
