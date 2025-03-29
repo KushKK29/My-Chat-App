@@ -7,13 +7,44 @@ import axios from "axios";
 import { connectDB } from "./lib/db.js";
 import authRoutes from "./routes/auth.route.js";
 import messageRoutes from "./routes/message.route.js";
-import { app, server } from "./lib/socket.js";
-import { checkAuth } from "./controllers/auth.controller.js";
-import { protectRoute } from "./middleware/auth.middleware.js";
+import { Server } from "socket.io";
+import http from "http";
+
 dotenv.config();
 
 const PORT = process.env.PORT || 5000;
 const __dirname = path.resolve();
+
+const app = express();
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: ["http://localhost:5173"],
+    credentials: true,
+  },
+});
+
+const userSocketMap = {}; // {userId: socketId}
+
+io.on("connection", (socket) => {
+  console.log("A user connected", socket.id);
+
+  const userId = socket.handshake.query.userId;
+  if (userId) userSocketMap[userId] = socket.id;
+
+  io.emit("getOnlineUsers", Object.keys(userSocketMap));
+
+  socket.on("disconnect", () => {
+    console.log("A user disconnected", socket.id);
+    delete userSocketMap[userId];
+    io.emit("getOnlineUsers", Object.keys(userSocketMap));
+  });
+});
+
+export function getReceiverSocketId(userId) {
+  return userSocketMap[userId];
+}
 
 app.use(express.json());
 app.use(cookieParser());
@@ -32,7 +63,6 @@ app.use("/api/messages", messageRoutes);
 // Serve frontend in production
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../frontend/dist")));
-
   app.get("*", (req, res) => {
     res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
   });
@@ -42,8 +72,6 @@ if (process.env.NODE_ENV === "production") {
 app.get("/health", (req, res) => {
   res.status(200).json({ message: "Server is alive!" });
 });
-
-
 
 // Keep-Alive Mechanism (Pings server every 15 minutes)
 const KEEP_ALIVE_URL =
@@ -60,11 +88,7 @@ setInterval(async () => {
   }
 }, 15 * 60 * 1000); // Runs every 15 minutes
 
-server
-  .listen(PORT, () => {
-    console.log("Server is running on PORT:" + PORT);
-    connectDB();
-  })
-  .on("error", (err) => {
-    console.error("Server failed to start:", err.message);
-  });
+server.listen(PORT, () => {
+  console.log("Server is running on PORT:" + PORT);
+  connectDB();
+});
