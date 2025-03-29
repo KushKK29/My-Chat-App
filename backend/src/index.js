@@ -19,10 +19,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: [
-      "https://my-chat-app-plum-psi.vercel.app",
-      "http://localhost:5173",
-    ],
+    origin: "http://localhost:5173",
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   })
@@ -46,13 +43,7 @@ app.get("/health", (req, res) => {
   res.status(200).json({ message: "Server is alive!" });
 });
 
-app.get("/check", (req, res, next) => {
-  try {
-    protectRoute(req, res, () => checkAuth(req, res));
-  } catch (error) {
-    res.status(401).json({ message: "Not authenticated" });
-  }
-});
+
 
 // Keep-Alive Mechanism (Pings server every 15 minutes)
 const KEEP_ALIVE_URL =
