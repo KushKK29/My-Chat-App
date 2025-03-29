@@ -44,7 +44,7 @@ app.get("/health", (req, res) => {
   res.status(200).json({ message: "Server is alive!" });
 });
 
-router.get("/check", (req, res, next) => {
+app.get("/check", (req, res, next) => {
   try {
     protectRoute(req, res, () => checkAuth(req, res));
   } catch (error) {
