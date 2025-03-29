@@ -8,6 +8,8 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: ["https://my-chat-app-plum-psi.vercel.app"],
+    methods: ["GET", "POST"],
+    credentials: true,
   },
 });
 
@@ -29,7 +31,7 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     console.log("A user disconnected", socket.id);
-    delete userSocketMap[userId];
+    if (userId) delete userSocketMap[userId];
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
   });
 });

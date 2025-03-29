@@ -19,9 +19,11 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin:
-      ["https://my-chat-app-plum-psi.vercel.app",
-      "http://localhost:5173"],
+    origin: [
+      "https://my-chat-app-plum-psi.vercel.app",
+      "http://localhost:5173",
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   })
 );
@@ -52,7 +54,6 @@ app.get("/check", (req, res, next) => {
   }
 });
 
-
 // Keep-Alive Mechanism (Pings server every 15 minutes)
 const KEEP_ALIVE_URL =
   process.env.NODE_ENV === "production"
@@ -68,7 +69,11 @@ setInterval(async () => {
   }
 }, 15 * 60 * 1000); // Runs every 15 minutes
 
-server.listen(PORT, () => {
-  console.log("Server is running on PORT:" + PORT);
-  connectDB();
-});
+server
+  .listen(PORT, () => {
+    console.log("Server is running on PORT:" + PORT);
+    connectDB();
+  })
+  .on("error", (err) => {
+    console.error("Server failed to start:", err.message);
+  });
