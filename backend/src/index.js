@@ -8,7 +8,8 @@ import { connectDB } from "./lib/db.js";
 import authRoutes from "./routes/auth.route.js";
 import messageRoutes from "./routes/message.route.js";
 import { app, server } from "./lib/socket.js";
-
+import { checkAuth } from "./controllers/auth.controller.js";
+import { protectRoute } from "./middleware/auth.middleware.js";
 dotenv.config();
 
 const PORT = process.env.PORT || 5000;
@@ -19,8 +20,8 @@ app.use(cookieParser());
 app.use(
   cors({
     origin:
-      "https://my-chat-app-plum-psi.vercel.app/login" ||
-      "http://localhost:5173",
+      ["https://my-chat-app-plum-psi.vercel.app",
+      "http://localhost:5173"],
     credentials: true,
   })
 );
@@ -42,6 +43,15 @@ if (process.env.NODE_ENV === "production") {
 app.get("/health", (req, res) => {
   res.status(200).json({ message: "Server is alive!" });
 });
+
+router.get("/check", (req, res, next) => {
+  try {
+    protectRoute(req, res, () => checkAuth(req, res));
+  } catch (error) {
+    res.status(401).json({ message: "Not authenticated" });
+  }
+});
+
 
 // Keep-Alive Mechanism (Pings server every 15 minutes)
 const KEEP_ALIVE_URL =
