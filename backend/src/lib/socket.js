@@ -7,7 +7,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: ["https://my-chat-app-plum-psi.vercel.app"],
+    origin: ["http://localhost:5173"],
   },
 });
 
@@ -35,4 +35,3 @@ io.on("connection", (socket) => {
 });
 
 export { io, app, server };
-  
